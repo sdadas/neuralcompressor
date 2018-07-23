@@ -4,6 +4,8 @@ import sys
 import os
 import time
 import math
+from typing import List
+
 import tensorflow as tf
 import numpy as np
 from rust_fst import Map
@@ -250,7 +252,7 @@ class EmbeddingCompressor(object):
         with open(word_path, 'r', encoding='utf-8') as input_file:
             words = [(word.strip(), idx) for idx, word in enumerate(input_file)]
             words = sorted(words, key=lambda val: val[0])
-            Map.from_iter(words, path=prefix + "vocab.fst")
+            Map.from_iter(words, path=prefix + ".vocab.fst")
 
     def evaluate(self, embed_matrix):
         assert os.path.exists(self._model_path + ".meta")
