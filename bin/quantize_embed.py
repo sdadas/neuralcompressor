@@ -10,11 +10,11 @@ from nncompress import EmbeddingCompressor
 
 if __name__ == '__main__':
     ap = ArgumentParser()
-    ap.add_argument("--matrix", default="data/glove.6B.300d.npy")
+    ap.add_argument("--matrix", default="data/word2vec_100_3.npy")
     ap.add_argument("--model", default="data/mymodel")
-    ap.add_argument("--limit", default=50000, type=int)
-    ap.add_argument("-M", "--M", default=32, type=int)
-    ap.add_argument("-K", "--K", default=16, type=int)
+    ap.add_argument("--limit", default=200000, type=int)
+    ap.add_argument("-M", "--M", default=64, type=int)
+    ap.add_argument("-K", "--K", default=32, type=int)
     ap.add_argument("--train", action="store_true")
     ap.add_argument("--export", action="store_true")
     ap.add_argument("--evaluate", action="store_true")
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     if args.train:
         compressor.train(matrix)
     elif args.export:
-        compressor.export(matrix, args.model)
+        compressor.export(matrix, args.model, args.matrix)
     elif args.evaluate:
         distance = compressor.evaluate(matrix)
         print("Mean euclidean distance:", distance)

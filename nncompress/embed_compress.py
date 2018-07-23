@@ -6,6 +6,7 @@ import time
 import math
 import tensorflow as tf
 import numpy as np
+from rust_fst import Map
 # Import _linear
 if tuple(map(int, tf.__version__.split("."))) >= (1, 6, 0):
     from tensorflow.contrib.rnn.python.ops import core_rnn_cell
@@ -209,7 +210,7 @@ class EmbeddingCompressor(object):
                 ))
         print("Training Done")
 
-    def export(self, embed_matrix, prefix):
+    def export(self, embed_matrix, prefix: str, matrix_path: str):
         """Export word codes and codebook for given embedding.
 
         Args:
@@ -224,18 +225,32 @@ class EmbeddingCompressor(object):
             saver = tf.train.Saver()
             saver.restore(sess, self._model_path)
 
-            # Dump codebook
-            codebook_tensor = sess.graph.get_tensor_by_name('Graph/codebook:0')
-            np.save(prefix + ".codebook", sess.run(codebook_tensor))
+            # Dump word dictionary
+            self._export_words_fst(prefix, matrix_path)
 
             # Dump codes
-            with open(prefix + ".codes", "w") as fout:
+            codes_arr = np.ndarray((vocab_size, self.M), dtype=np.uint8)
+            with open(prefix + ".codes", "w", encoding='utf-8') as fout:
                 vocab_list = list(range(embed_matrix.shape[0]))
+                idx = 0
                 for start_idx in range(0, vocab_size, self._BATCH_SIZE):
                     word_ids = vocab_list[start_idx:start_idx + self._BATCH_SIZE]
                     codes = sess.run(codes_op, {word_ids_var: word_ids}).tolist()
                     for code in codes:
+                        codes_arr[idx, :] = code
+                        idx += 1
                         fout.write(" ".join(map(str, code)) + "\n")
+
+            # Dump codebook
+            codebook_tensor = sess.graph.get_tensor_by_name('Graph/codebook:0')
+            np.savez_compressed(prefix + ".compressed.npz", codes_arr, sess.run(codebook_tensor))
+
+    def _export_words_fst(self, prefix, matrix_path):
+        word_path: str = matrix_path.replace(".npy", ".word")
+        with open(word_path, 'r', encoding='utf-8') as input_file:
+            words = [(word.strip(), idx) for idx, word in enumerate(input_file)]
+            words = sorted(words, key=lambda val: val[0])
+            Map.from_iter(words, path=prefix + "vocab.fst")
 
     def evaluate(self, embed_matrix):
         assert os.path.exists(self._model_path + ".meta")

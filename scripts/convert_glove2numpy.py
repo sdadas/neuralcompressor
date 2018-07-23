@@ -11,10 +11,10 @@ if __name__ == '__main__':
     glove_path = args.path
     embed_path = args.path.replace(".txt", ".npy")
     word_path = args.path.replace(".txt", ".word")
-    f_wordout = open(word_path, "w")
+    f_wordout = open(word_path, "w", encoding='utf-8')
     print("convert {} to {}".format(glove_path, embed_path))
 
-    lines = list(open(glove_path))
+    lines = list(open(glove_path, 'r', encoding='utf-8'))
     embed_matrix = np.zeros((len(lines), args.dim), dtype='float32')
     for i, line in enumerate(lines):
         parts = line.rstrip().split(' ')
